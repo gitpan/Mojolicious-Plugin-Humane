@@ -5,7 +5,7 @@ use File::Basename 'dirname';
 use File::Spec;
 use File::ShareDir 'dist_dir';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 $VERSION = eval $VERSION;
 
 has 'humane_version' => '3.0.5';
@@ -17,11 +17,17 @@ has 'static_path' => sub {
   $self->path('humane-' . $self->humane_version);
 };
 
-has 'template' => 'humane';
-
-has 'template_path' => sub {
-  shift->path('templates');
-};
+has 'template' => <<'END';
+% my $theme = humane->theme;
+%= javascript 'humane.min.js'
+%= stylesheet "$theme.css"
+%= javascript begin
+  humane.baseCls = 'humane-<%= $theme %>';
+  % foreach my $message ( humane_messages ) {
+    humane.log( "<%= $message %>" );
+  % }
+%= end
+END
 
 has 'theme' => 'libnotify';
 
@@ -35,7 +41,7 @@ sub path {
   my $share = File::Spec->catdir( dist_dir('Mojolicious-Plugin-Humane'), $folder );
   return $share if -d $share;
 
-  die "Cannot find static files. Tried '$local' and '$share'.\n";
+  die "Cannot find files. Tried '$local' and '$share'.\n";
 }
 
 sub register {
@@ -45,8 +51,7 @@ sub register {
   $conf{auto} //= 1;      #/# highlight fix
 
   # Append static to directories
-  push @{$app->static->paths},   $plugin->static_path;
-  push @{$app->renderer->paths}, $plugin->template_path;
+  push @{$app->static->paths}, $plugin->static_path;
 
   $app->helper( humane => sub { $plugin } );
 
@@ -76,6 +81,16 @@ sub register {
     return $flash;
   });
 
+  $app->helper( humane_include => sub {
+    my $self = shift;
+    my $humane = $self->humane;
+    my $template = $humane->template;
+    $self->render( 
+      inline => $template,
+      partial => 1,
+    );
+  });
+
   $app->helper( humane_messages => sub {
     my $self = shift;
     my @messages = (
@@ -90,14 +105,10 @@ sub register {
     my @messages = $c->humane_messages;
     return unless @messages;
 
-    my $humane = $c->humane;
-    my $dom    = $c->res->dom;
-    my $head   = $dom->at('head') or return;
+    my $dom  = $c->res->dom;
+    my $head = $dom->at('head') or return;
 
-    my $append = $c->render(
-      $humane->template,
-      partial => 1,
-    );
+    my $append = $c->humane_include;
     $head->append_content( $append );
     $c->tx->res->body( $dom->to_xml );
   } ) if $conf{auto};
@@ -138,7 +149,7 @@ Mojolicious::Plugin::Humane - Mojolicious integration for humane.js
   ...
   __DATA__
   ...
-  %= include humane->template
+  %= humane_include
 
 =head1 DESCRIPTION
 
@@ -163,11 +174,7 @@ The default is C<< $plugin->path('humane-' . $self->humane_version); >>.
 
 =head2 template 
 
-The name of the template to be used. Although this allows the user to supply their own template, it is more likely useful for passing to C<include> when the C<auto> feature is turned off. The default is C<humane>.
-
-=head2 template_path
-
-Path containing the template. The default is C<< $plugin->path('templates'); >>.
+The text of the template to be used. Although this allows the user to supply their own template, it is more useful just for internal storage.
 
 =head2 theme
 
@@ -221,7 +228,11 @@ Holds the instance of the plugin.
 
 Take a message or list of messages and adds them to the stack of messages to be rendered during the current or next rendering respectively. Returns an array reference of all the buffered messages in that stack. May be called without argument to get the stack while not adding messages. 
 
-Note that each stack is rendered first-in first-out, however all flashed messages are shown before stashed messages. 
+Note that each stack is rendered first-in first-out, however all flashed messages are shown before stashed messages.
+
+=head2 C<humane_include>
+
+Behaves like C<include> inserting the template needed to render the messages. You need to use this when setting C<< auto => 0 >>.
 
 =head2 C<humane_messages>
 
@@ -243,7 +254,7 @@ Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
 
 Mojolicious::Plugin::Humane is
 
-Copyright (C) 2012 by Joel Berger
+Copyright (C) 2013 by Joel Berger
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
