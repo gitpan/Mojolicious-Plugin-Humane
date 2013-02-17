@@ -5,10 +5,10 @@ use File::Basename 'dirname';
 use File::Spec;
 use File::ShareDir 'dist_dir';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 $VERSION = eval $VERSION;
 
-has 'humane_version' => '3.0.5';
+has 'humane_version' => '3.0.6';
 
 has 'key' => '_humane';
 
@@ -19,8 +19,8 @@ has 'static_path' => sub {
 
 has 'template' => <<'END';
 % my $theme = humane->theme;
-%= javascript 'humane.min.js'
-%= stylesheet "$theme.css"
+%= javascript '/humane.min.js'
+%= stylesheet "/$theme.css"
 %= javascript begin
   humane.baseCls = 'humane-<%= $theme %>';
   % foreach my $message ( humane_messages ) {
@@ -161,7 +161,9 @@ By default the template needed to render the messages is injected only if needed
 
 =head2 humane_version 
 
-Version of humane.js (to be) loaded. Defaults to the highest bundled version.
+Version of humane.js (to be) loaded. Defaults to the highest bundled version. Currently version 3.0.6 is bundled.
+
+In future, non-breaking releases will be silently upgraded, while breaking versions will be kept and left at the highest version that had been bundled.
 
 =head2 key
 
