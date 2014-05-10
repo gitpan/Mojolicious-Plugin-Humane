@@ -5,10 +5,10 @@ use File::Spec;
 use File::Basename ();
 use File::ShareDir ();
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 $VERSION = eval $VERSION;
 
-has 'humane_version' => '3.0.6';
+has 'humane_version' => '3.2.0';
 
 has 'static_path' => sub {
   my $self = shift;
@@ -97,7 +97,7 @@ sub register {
 
     my $append = $c->humane_include;
     $head->append_content( $append );
-    $c->tx->res->body( $dom->to_xml );
+    $c->tx->res->body( $dom->to_string );
   } ) if $conf{auto};
 
   return $plugin;
@@ -160,13 +160,13 @@ L<Mojolicious::Plugin::Humane> is a L<Mojolicious> plugin allowing easy use of h
 
 By default the template needed to render the messages is injected only if needed. For infrequent use, this is less costly overall and less to think about. If messages are to be used frequently or perhaps humane.js is to also be used without reloading the page (via websockets perhaps) then turn the C<auto> feature off and add the template to your layout manually.
 
-Internally this plugin uses the (non-localized) stash keys C<humane.stash> and C<humane.flash>. Other stash keys starting with C<human.> are reserved for future use should be avoided.
+Internally this plugin uses the (non-localized) stash keys C<humane.stash> and C<humane.flash>. Other stash keys starting with C<humane.> are reserved for future use should be avoided.
 
 =head1 ATTRIBUTES
 
 =head2 humane_version 
 
-Version of humane.js (to be) loaded. Defaults to the highest bundled version. Currently version 3.0.6 is bundled.
+Version of humane.js (to be) loaded. Defaults to the highest bundled version. Currently version 3.2.0 is bundled.
 
 In future, non-breaking releases will be silently upgraded, while breaking versions will be kept and left at the highest version that had been bundled.
 
